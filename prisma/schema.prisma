@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Provider {
+  id            String   @id @default(cuid())
+  name          String
+  displayName   String
+  email         String?
+  walletAddress String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tools Tool[]
+  logs  UsageLog[]
+}
+
+model Tool {
+  id                String   @id @default(cuid())
+  providerId        String
+  name              String
+  slug              String   @unique
+  description       String
+  category          String
+  endpointUrl       String
+  method            String   @default("POST")
+  priceAmount       String
+  priceAsset        String   @default("USDC")
+  network           String   @default("stellar:testnet")
+  providerWallet    String
+  inputSchemaJson   String?
+  outputSchemaJson  String?
+  inputExampleJson  String
+  outputExampleJson String
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  provider Provider   @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  logs     UsageLog[]
+
+  @@index([providerId])
+  @@index([category])
+  @@index([isActive])
+}
+
+model UsageLog {
+  id                    String   @id @default(cuid())
+  toolId                String
+  providerId            String
+  payerAddress          String?
+  providerWallet        String
+  amount                String
+  asset                 String
+  network               String
+  paymentStatus         String
+  paymentProof          String?
+  txHash                String?
+  facilitatorResponseJson String?
+  requestPayloadPreview String?
+  responsePreview       String?
+  errorMessage          String?
+  createdAt             DateTime @default(now())
+
+  tool     Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([toolId])
+  @@index([providerId])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
