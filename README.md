@@ -1,55 +1,79 @@
 # AgentPay
 
-x402-powered API marketplace for external AI agents on Stellar testnet.
+AgentPay is an x402-powered API marketplace for external AI agents on Stellar testnet.
 
-AgentPay lets API providers register HTTP endpoints as paid tools. External agents can discover those tools, receive an HTTP 402 payment requirement, pay through x402 on Stellar testnet, and receive the provider response after settlement.
+Providers register normal HTTP APIs as paid tools. External agents discover those tools,
+receive an HTTP 402 payment requirement, pay through x402 with Stellar testnet USDC, and
+receive the provider response after settlement.
 
-## Core MVP
+## What Is Included
 
-- Provider Dashboard for registering paid API tools.
-- Marketplace UI for active tools.
+- Product-first landing page for judges and users.
+- Marketplace UI for active paid tools.
+- Provider console for registering APIs.
 - Machine-readable discovery:
   - `GET /api/tools`
   - `GET /.well-known/agentpay-tools.json`
 - Paid wrapper endpoint:
   - `POST /api/tools/{toolId}/call`
 - x402/Stellar testnet payment before provider forwarding.
-- Usage/payment logs dashboard.
+- Payment and usage logs dashboard.
 - External consumer demo in `examples/agent-consumer`.
 
 AgentPay does not make an in-app chatbot the core product. The demo agent is an external runtime/client that consumes marketplace discovery.
 
-## Setup
+## Local Setup
 
 ```bash
 npm install
+cp .env.example .env
+cp .env.local.example .env.local
+```
+
+Fill `.env` with Supabase Postgres credentials so Prisma CLI commands can read
+`DATABASE_URL`. Keep wallet secrets in `.env.local`.
+
+```bash
 npm run db:push
 npm run db:seed
 npm run dev
 ```
 
-The app defaults to `http://localhost:3000`. If Next.js chooses another port, update `NEXT_PUBLIC_APP_URL` in `.env` or `.env.local`, then run `npm run db:seed` again so seed provider endpoint URLs match the running app.
+The app defaults to `http://localhost:3000`. If Next.js chooses another port, update `NEXT_PUBLIC_APP_URL`, then run `npm run db:seed` again so seeded provider endpoint URLs match the running app.
 
-## Environment
+## Required Environment
 
-Copy `.env.example` values into local env files as needed. The committed `.env` only contains non-secret local defaults.
-
-Required for the full paid consumer demo:
+Use Supabase Postgres for deployable state. SQLite is no longer the target runtime.
+For local work, put database URLs in `.env` and wallet-only secrets in `.env.local`.
 
 ```bash
-AGENT_STELLAR_SECRET_KEY="S..."
-DEMO_PROVIDER_STELLAR_PUBLIC_KEY="G..."
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+STELLAR_NETWORK="stellar:testnet"
+STELLAR_RPC_URL="https://soroban-testnet.stellar.org"
 X402_FACILITATOR_URL="https://www.x402.org/facilitator"
+PROVIDER_REQUEST_TIMEOUT_MS="12000"
+DEMO_PROVIDER_STELLAR_PUBLIC_KEY="G..."
+AGENT_STELLAR_SECRET_KEY="S..."
 ```
 
-Use Stellar testnet only. Keep secret keys in `.env.local`; never put them in chat or commit them.
+Optional:
+
+```bash
+TOOL_REGISTRATION_TOKEN="long-random-token"
+```
+
+If `TOOL_REGISTRATION_TOKEN` is set, provider registration requires the token in the UI or the `x-agentpay-registration-token` request header.
+
+Keep `AGENT_STELLAR_SECRET_KEY` in `.env.local`; do not commit it and do not add it to Vercel unless you intentionally build a server-side demo runner.
 
 ## Demo Consumer
 
 Run the app first, then:
 
 ```bash
-npm run demo:agent -- "Summarize this abstract: ..."
+npm run demo:agent -- "Explain x402 on Stellar"
 ```
 
 The consumer will:
@@ -63,17 +87,26 @@ The consumer will:
 
 OpenAI selection is optional later. The core flow works without `OPENAI_API_KEY`.
 
+## Deploy
+
+See [docs/deployment.md](docs/deployment.md).
+
+Short version:
+
+```bash
+DATABASE_URL="$DIRECT_URL" npm run db:push
+DATABASE_URL="$DIRECT_URL" npm run db:seed
+npm run build
+```
+
+Then add the same runtime env values to Vercel and deploy.
+
 ## Verification
 
 ```bash
 npm run lint
 npm run build
-OPENSPEC_TELEMETRY=0 openspec validate build-agentpay-mvp
-```
-
-Smoke-test discovery while the dev server is running:
-
-```bash
+curl http://localhost:3000/api/health
 curl http://localhost:3000/api/tools
 curl http://localhost:3000/.well-known/agentpay-tools.json
 ```

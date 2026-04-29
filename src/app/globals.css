@@ -4,8 +4,8 @@
 
 :root {
   color-scheme: light;
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Avenir Next", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 * {
@@ -22,10 +22,13 @@ body {
   margin: 0;
   color: #151713;
   background:
-    linear-gradient(90deg, rgba(21, 23, 19, 0.035) 1px, transparent 1px),
-    linear-gradient(rgba(21, 23, 19, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 12% 8%, rgba(223, 246, 232, 0.85), transparent 24rem),
+    radial-gradient(circle at 84% 18%, rgba(239, 184, 74, 0.2), transparent 22rem),
+    linear-gradient(90deg, rgba(21, 23, 19, 0.032) 1px, transparent 1px),
+    linear-gradient(rgba(21, 23, 19, 0.032) 1px, transparent 1px),
     #f5f1e8;
-  background-size: 28px 28px;
+  background-repeat: no-repeat, no-repeat, repeat, repeat, repeat;
+  background-size: auto, auto, 28px 28px, 28px 28px, auto;
 }
 
 button,
@@ -38,6 +41,20 @@ select {
 ::selection {
   background: #efb84a;
   color: #151713;
+}
+
+.flow-grid {
+  background-image:
+    linear-gradient(rgba(21, 23, 19, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(21, 23, 19, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.circuit-grid {
+  background-image:
+    linear-gradient(90deg, rgba(245, 241, 232, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(245, 241, 232, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 @layer components {
@@ -58,5 +75,34 @@ select {
     border-color: #151713;
     background: #ffffff;
     box-shadow: 0 0 0 3px rgba(239, 184, 74, 0.28);
+  }
+
+  .form-section {
+    border: 1px solid rgba(21, 23, 19, 0.1);
+    background: rgba(255, 255, 255, 0.72);
+    padding: 1.25rem;
+    box-shadow: 0 0 0 1px rgba(21, 23, 19, 0.08);
+  }
+
+  .section-shell {
+    border: 1px solid rgba(21, 23, 19, 0.1);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 0 0 1px rgba(21, 23, 19, 0.08);
+  }
+
+  .command-chip {
+    border: 1px solid rgba(21, 23, 19, 0.12);
+    background: rgba(255, 255, 255, 0.8);
+    padding: 0.75rem 0.85rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .ink-panel {
+    border: 1px solid #151713;
+    background: #151713;
+    color: #f5f1e8;
+    box-shadow: 8px 8px 0 rgba(239, 184, 74, 0.72);
   }
 }

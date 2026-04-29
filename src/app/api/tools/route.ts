@@ -5,6 +5,7 @@ import { getActiveTools } from "@/lib/tools";
 import { toPublicTool } from "@/lib/discovery";
 import { registerToolSchema } from "@/lib/validation";
 import { slugify } from "@/lib/text";
+import { hasRegistrationAccess } from "@/lib/registration";
 
 export async function GET(request: Request) {
   const tools = await getActiveTools();
@@ -17,6 +18,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    if (!hasRegistrationAccess(request)) {
+      return NextResponse.json(
+        {
+          error:
+            "Tool registration is protected. Add the registration access token before publishing."
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const input = registerToolSchema.parse(body);
 

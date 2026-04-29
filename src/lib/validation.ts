@@ -38,26 +38,37 @@ export function isValidStellarPublicKey(value: string) {
 export function isAllowedProviderUrl(value: string) {
   try {
     const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
 
     if (process.env.NODE_ENV === "production") {
-      return url.protocol === "https:" && !isPrivateHost(url.hostname);
+      return url.protocol === "https:" && !isPrivateHost(hostname);
     }
 
-    return url.protocol === "https:" || isLocalhost(url.hostname);
+    return url.protocol === "https:" || isLocalhost(hostname);
   } catch {
     return false;
   }
 }
 
 function isLocalhost(hostname: string) {
-  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "[::1]"
+  );
 }
 
 function isPrivateHost(hostname: string) {
   return (
     isLocalhost(hostname) ||
+    hostname === "0.0.0.0" ||
+    hostname.startsWith("127.") ||
     hostname.startsWith("10.") ||
+    hostname.startsWith("100.64.") ||
+    hostname.startsWith("169.254.") ||
     hostname.startsWith("192.168.") ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname) ||
+    (hostname.includes(":") && (hostname.startsWith("fc") || hostname.startsWith("fd")))
   );
 }

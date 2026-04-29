@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:push:direct": "node scripts/with-direct-url.mjs prisma db push",
     "db:seed": "prisma db seed",
+    "db:seed:direct": "node scripts/with-direct-url.mjs prisma db seed",
     "demo:agent": "tsx examples/agent-consumer/index.ts"
   },
   "prisma": {
@@ -26,9 +28,11 @@
     "clsx": "latest",
     "dotenv": "latest",
     "lucide-react": "latest",
+    "motion": "^12.38.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "sonner": "^2.0.7",
     "zod": "latest"
   },
   "devDependencies": {
