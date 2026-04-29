@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { toast } from "sonner";
 import {
   Check,
   Clipboard,
@@ -90,20 +89,12 @@ export function PaymentFlowDemo({ proof }: { proof?: LandingProof | null }) {
 
     const interval = window.setInterval(() => {
       setActiveStep((current) => {
-        const next = (current + 1) % steps.length;
-
-        if (next === 3) {
-          toast.success("Payment settled on Stellar testnet", {
-            description: `${resolvedProof.amount} ${resolvedProof.asset} paid to provider wallet.`
-          });
-        }
-
-        return next;
+        return (current + 1) % steps.length;
       });
     }, 2200);
 
     return () => window.clearInterval(interval);
-  }, [isPlaying, resolvedProof.amount, resolvedProof.asset]);
+  }, [isPlaying]);
 
   const active = steps[activeStep];
 
