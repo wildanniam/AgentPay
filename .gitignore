@@ -3,6 +3,8 @@
 .env.*.local
 .next/
 node_modules/
+target/
+contracts/*/test_snapshots/
 dev.db
 dev.db-journal
 prisma/dev.db
