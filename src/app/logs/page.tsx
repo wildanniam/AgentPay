@@ -74,6 +74,26 @@ export default async function PaymentLogsPage() {
                   <td className="px-4 py-4">
                     <p className="font-semibold">{log.tool.name}</p>
                     <p className="mt-1 text-xs text-steel">{log.provider.displayName}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {log.tool.onchainStatus === "registered" ? (
+                        <>
+                          <StatusBadge tone="ink">on-chain registered</StatusBadge>
+                          {log.tool.onchainTxHash ? (
+                            <a
+                              href={`https://stellar.expert/explorer/testnet/tx/${log.tool.onchainTxHash}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 border border-ink/20 bg-white px-2 py-1 text-xs font-medium transition hover:border-ink"
+                            >
+                              <ExternalLink className="size-3.5" />
+                              Registry proof
+                            </a>
+                          ) : null}
+                        </>
+                      ) : (
+                        <StatusBadge tone="muted">off-chain listing</StatusBadge>
+                      )}
+                    </div>
                     <div className="mt-3 hidden gap-1 lg:flex">
                       <Step done label="402" />
                       <Step done={log.paymentStatus === "paid"} label="paid" />

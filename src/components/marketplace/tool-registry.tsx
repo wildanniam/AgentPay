@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, Code2, Search, Terminal, Wallet } from "lucide-react";
+import { ChevronDown, Code2, ExternalLink, Hash, Search, ShieldCheck, Terminal, Wallet } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { StatusBadge } from "@/components/ui/status-badge";
 
@@ -18,6 +18,14 @@ export type RegistryTool = {
   providerWallet: string;
   inputExample: unknown;
   outputExample: unknown;
+  metadataHash?: string | null;
+  onchain?: {
+    status: string;
+    contractId?: string | null;
+    txHash?: string | null;
+    ledger?: number | null;
+    registeredAt?: string | null;
+  };
 };
 
 export function ToolRegistry({
@@ -103,6 +111,11 @@ export function ToolRegistry({
                     <StatusBadge tone="network">{tool.category}</StatusBadge>
                     <StatusBadge tone="payment">x402</StatusBadge>
                     <StatusBadge tone="success">{tool.network}</StatusBadge>
+                    {tool.onchain?.status === "registered" ? (
+                      <StatusBadge tone="ink">on-chain registered</StatusBadge>
+                    ) : (
+                      <StatusBadge tone="muted">off-chain listing</StatusBadge>
+                    )}
                   </div>
                   <h2 className="mt-3 text-2xl font-semibold">{tool.name}</h2>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
@@ -137,10 +150,23 @@ export function ToolRegistry({
                         label="Provider wallet"
                         value={tool.providerWallet}
                       />
+                      {tool.metadataHash ? (
+                        <DetailLine
+                          icon={<Hash className="size-4" />}
+                          label="Metadata hash"
+                          value={tool.metadataHash}
+                        />
+                      ) : null}
+                      {tool.onchain?.txHash ? (
+                        <ProofLine tool={tool} />
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <CopyButton value={endpoint} label="Copy endpoint" />
                       <CopyButton value={tool.id} label="Copy tool id" />
+                      {tool.metadataHash ? (
+                        <CopyButton value={tool.metadataHash} label="Copy hash" />
+                      ) : null}
                       <CopyButton
                         value={`npm run demo:agent -- "Explain x402 on Stellar"`}
                         label="Copy demo command"
@@ -199,6 +225,29 @@ function DetailLine({
       </span>
       <p className="font-mono text-xs uppercase text-steel">{label}</p>
       <code className="break-all font-mono text-xs text-ink">{value}</code>
+    </div>
+  );
+}
+
+function ProofLine({ tool }: { tool: RegistryTool }) {
+  return (
+    <div className="grid gap-3 border border-moss/20 bg-mint/60 p-3 md:grid-cols-[32px_120px_1fr] md:items-center">
+      <span className="flex size-8 items-center justify-center border border-moss/20 bg-white text-moss">
+        <ShieldCheck className="size-4" />
+      </span>
+      <p className="font-mono text-xs uppercase text-moss">On-chain proof</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <code className="break-all font-mono text-xs text-ink">{tool.onchain?.txHash}</code>
+        <a
+          href={`https://stellar.expert/explorer/testnet/tx/${tool.onchain?.txHash}`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 border border-moss/20 bg-white px-2 py-1 text-xs font-semibold text-moss transition hover:border-moss"
+        >
+          <ExternalLink className="size-3.5" />
+          View
+        </a>
+      </div>
     </div>
   );
 }

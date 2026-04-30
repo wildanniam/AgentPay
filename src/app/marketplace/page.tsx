@@ -23,7 +23,15 @@ export default async function MarketplacePage() {
     providerName: tool.provider.displayName,
     providerWallet: tool.providerWallet,
     inputExample: parseJsonField(tool.inputExampleJson, {}),
-    outputExample: parseJsonField(tool.outputExampleJson, {})
+    outputExample: parseJsonField(tool.outputExampleJson, {}),
+    metadataHash: tool.metadataHash,
+    onchain: {
+      status: tool.onchainStatus,
+      contractId: tool.onchainContractId,
+      txHash: tool.onchainTxHash,
+      ledger: tool.onchainLedger,
+      registeredAt: tool.onchainRegisteredAt?.toISOString() ?? null
+    }
   }));
 
   const visibleTools = registryTools.length > 0 ? registryTools : registryIsFallback ? fallbackRegistryTools : [];
