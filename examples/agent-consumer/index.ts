@@ -160,12 +160,25 @@ function scoreTool(prompt: string, tool: DiscoveredTool) {
     campus: ["campus", "kuliah", "sidang", "skripsi", "ta", "krs"],
     stellar: ["stellar", "soroban", "wallet", "testnet", "x402", "usdc"],
     data: ["json", "validate", "format", "schema", "payload", "parse"],
-    utility: ["pitch", "startup", "critic", "meeting", "action", "transcript", "todo"]
+    pitch: ["pitch", "startup", "critic", "critique", "founder", "investor"],
+    meeting: ["meeting", "action", "transcript", "todo", "follow up", "decision"]
   };
 
-  for (const [category, keywords] of Object.entries(keywordSets)) {
-    if (tool.category === category) {
-      score += keywords.filter((keyword) => prompt.includes(keyword)).length * 3;
+  for (const [intent, keywords] of Object.entries(keywordSets)) {
+    const promptHits = keywords.filter((keyword) => prompt.includes(keyword));
+
+    if (promptHits.length === 0) {
+      continue;
+    }
+
+    for (const keyword of promptHits) {
+      if (haystack.includes(keyword)) {
+        score += 4;
+      }
+    }
+
+    if (tool.category === intent) {
+      score += promptHits.length * 2;
     }
   }
 
@@ -179,24 +192,49 @@ function scoreTool(prompt: string, tool: DiscoveredTool) {
 }
 
 function normalizePayload(prompt: string, tool: DiscoveredTool) {
-  if (tool.category === "research") {
+  const haystack = `${tool.name} ${tool.description} ${tool.category}`.toLowerCase();
+
+  if (tool.category === "research" || haystack.includes("paper") || haystack.includes("abstract")) {
     return { text: prompt.replace(/^summarize\s+(this\s+)?(abstract:)?/i, "").trim() || prompt };
   }
 
-  if (tool.category === "campus") {
+  if (tool.category === "campus" || haystack.includes("faq")) {
     return { question: prompt };
   }
 
-  if (tool.category === "stellar") {
+  if (tool.category === "stellar" || haystack.includes("stellar") || haystack.includes("x402")) {
     return { question: prompt };
   }
 
-  if (tool.category === "data") {
-    return { input: prompt };
+  if (haystack.includes("pitch") || haystack.includes("startup") || haystack.includes("critic")) {
+    return {
+      pitch:
+        prompt
+          .replace(/^critique\s+(this\s+)?(startup\s+)?pitch:\s*/i, "")
+          .trim() || prompt
+    };
   }
 
-  if (tool.category === "utility") {
-    return { input: prompt };
+  if (
+    haystack.includes("meeting") ||
+    haystack.includes("action") ||
+    haystack.includes("transcript")
+  ) {
+    return {
+      transcript:
+        prompt
+          .replace(/^extract\s+(meeting\s+)?actions:\s*/i, "")
+          .trim() || prompt
+    };
+  }
+
+  if (tool.category === "data" || haystack.includes("json") || haystack.includes("payload")) {
+    return {
+      json:
+        prompt
+          .replace(/^validate\s+(this\s+)?json\s+payload:\s*/i, "")
+          .trim() || prompt
+    };
   }
 
   return { input: prompt };

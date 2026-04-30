@@ -38,6 +38,7 @@ export function ToolRegistry({
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [openToolId, setOpenToolId] = useState<string | null>(tools[0]?.id ?? null);
+  const openTool = tools.find((tool) => tool.id === openToolId) ?? tools[0];
 
   const categories = useMemo(
     () => ["all", ...Array.from(new Set(tools.map((tool) => tool.category)))],
@@ -98,6 +99,7 @@ export function ToolRegistry({
         {filteredTools.map((tool) => {
           const isOpen = openToolId === tool.id;
           const endpoint = `/api/tools/${tool.id}/call`;
+          const demoCommand = demoCommandForTool(tool);
 
           return (
             <article key={tool.id} className="section-shell overflow-hidden">
@@ -168,7 +170,7 @@ export function ToolRegistry({
                         <CopyButton value={tool.metadataHash} label="Copy hash" />
                       ) : null}
                       <CopyButton
-                        value={`npm run demo:agent -- "Explain x402 on Stellar"`}
+                        value={demoCommand}
                         label="Copy demo command"
                       />
                     </div>
@@ -193,7 +195,7 @@ export function ToolRegistry({
       <div className="flex items-center gap-3 border border-ink bg-ink p-4 text-paper">
         <Terminal className="size-5 text-signal" />
         <code className="break-all font-mono text-sm">
-          npm run demo:agent -- &quot;Explain x402 on Stellar&quot;
+          {openTool ? demoCommandForTool(openTool) : 'npm run demo:agent -- "Explain x402 on Stellar"'}
         </code>
       </div>
     </div>
@@ -269,4 +271,44 @@ function shorten(value: string, size = 6) {
   }
 
   return `${value.slice(0, size)}...${value.slice(-size)}`;
+}
+
+function demoCommandForTool(tool: RegistryTool) {
+  const prompt = demoPromptForTool(tool).replace(/"/g, '\\"');
+
+  return `npm run demo:agent -- "${prompt}"`;
+}
+
+function demoPromptForTool(tool: RegistryTool) {
+  const haystack = `${tool.name} ${tool.description} ${tool.category}`.toLowerCase();
+
+  if (haystack.includes("pitch") || haystack.includes("startup") || haystack.includes("critic")) {
+    return "Critique this startup pitch: WorkflowAI sells a paid API that reviews research notes for student founders.";
+  }
+
+  if (haystack.includes("json") || haystack.includes("schema") || haystack.includes("payload")) {
+    return 'Validate this JSON payload: {"tool":"agentpay","paid":true}';
+  }
+
+  if (
+    haystack.includes("meeting") ||
+    haystack.includes("action") ||
+    haystack.includes("transcript")
+  ) {
+    return "Extract meeting actions: Wildan will deploy the app today. The team agreed to record a demo video.";
+  }
+
+  if (tool.category === "research" || haystack.includes("paper") || haystack.includes("abstract")) {
+    return "Summarize this abstract: Autonomous agents need payment-aware API discovery to call external services safely.";
+  }
+
+  if (tool.category === "campus" || haystack.includes("faq")) {
+    return "Apa syarat sidang TA?";
+  }
+
+  if (tool.category === "stellar" || haystack.includes("stellar") || haystack.includes("x402")) {
+    return "Explain x402 on Stellar";
+  }
+
+  return `Use the ${tool.name} tool with its input example.`;
 }
