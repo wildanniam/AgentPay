@@ -6,6 +6,7 @@ import { toPublicTool } from "@/lib/discovery";
 import { registerToolSchema } from "@/lib/validation";
 import { slugify } from "@/lib/text";
 import { hasRegistrationAccess } from "@/lib/registration";
+import { computeToolMetadataHash } from "@/lib/tool-metadata";
 
 export async function GET(request: Request) {
   const tools = await getActiveTools();
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const input = registerToolSchema.parse(body);
+    const metadataHash = computeToolMetadataHash(input);
 
     const provider = await prisma.provider.upsert({
       where: { walletAddress: input.providerWallet },
@@ -61,6 +63,8 @@ export async function POST(request: Request) {
         priceAsset: input.priceAsset,
         network: "stellar:testnet",
         providerWallet: input.providerWallet,
+        metadataHash,
+        onchainStatus: "not_registered",
         inputExampleJson: JSON.stringify(input.inputExampleJson),
         outputExampleJson: JSON.stringify(input.outputExampleJson),
         isActive: true

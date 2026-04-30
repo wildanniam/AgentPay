@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { StrKey } from "@stellar/stellar-sdk";
 import { config } from "dotenv";
+import { computeToolMetadataHash } from "../src/lib/tool-metadata";
 
 config({ path: ".env.local", override: true, quiet: true });
 
@@ -83,6 +84,21 @@ async function main() {
   ];
 
   for (const tool of seedTools) {
+    const hashInput = {
+      providerName: provider.displayName,
+      providerWallet: wallet,
+      name: tool.name,
+      description: tool.description,
+      category: tool.category as "research" | "campus" | "stellar" | "data" | "utility",
+      endpointUrl: tool.endpointUrl,
+      method: "POST" as const,
+      priceAmount: tool.priceAmount,
+      priceAsset: "USDC" as const,
+      inputExampleJson: tool.inputExampleJson,
+      outputExampleJson: tool.outputExampleJson
+    };
+    const metadataHash = computeToolMetadataHash(hashInput);
+
     await prisma.tool.upsert({
       where: { slug: tool.slug },
       update: {
@@ -91,6 +107,7 @@ async function main() {
         priceAsset: "USDC",
         network: "stellar:testnet",
         providerWallet: wallet,
+        metadataHash,
         inputExampleJson: JSON.stringify(tool.inputExampleJson),
         outputExampleJson: JSON.stringify(tool.outputExampleJson),
         providerId: provider.id,
@@ -102,6 +119,7 @@ async function main() {
         priceAsset: "USDC",
         network: "stellar:testnet",
         providerWallet: wallet,
+        metadataHash,
         inputExampleJson: JSON.stringify(tool.inputExampleJson),
         outputExampleJson: JSON.stringify(tool.outputExampleJson),
         providerId: provider.id,
