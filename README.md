@@ -19,6 +19,10 @@
     <a href="https://agent-pay-jet.vercel.app/.well-known/agentpay-tools.json">Agent Discovery JSON</a>
     ·
     <a href="https://stellar.expert/explorer/testnet/contract/CCRBSDJQ22T3RARVHUZLDYVP65DNN6HF7LVIQ7ZKMOFCK4RD7UIXTXBL">Registry Contract</a>
+    ·
+    <a href="https://drive.google.com/drive/folders/17F3njVRnx2FFrT-gawBWK2KzSTRoCc1Y?usp=sharing">Demo Video</a>
+    ·
+    <a href="https://docs.google.com/spreadsheets/d/1J1tNAu-vLAwhJbt3wukgkPtV2goqnBleN8nLz8gERIk/edit?usp=sharing">User Feedback</a>
   </p>
   <p>
     <img alt="AgentPay CI" src="https://github.com/wildanniam/AgentPay/actions/workflows/ci.yml/badge.svg" />
@@ -588,7 +592,8 @@ Required evidence for the Stellar Level 3+4 submission:
 | x402 demo payment transaction | [`977fea7f0af5e4fe1da56659b9b0bc96899dc2dd27bbb4f1eb7116fd119b115a`](https://stellar.expert/explorer/testnet/tx/977fea7f0af5e4fe1da56659b9b0bc96899dc2dd27bbb4f1eb7116fd119b115a) |
 | 3+ passing tests screenshot | `TODO: add screenshot after final test run` |
 | Mobile responsive screenshot | `TODO: add mobile screenshot` |
-| 1-minute demo video | `TODO: add demo video link` |
+| 1-minute demo video | [Google Drive demo folder](https://drive.google.com/drive/folders/17F3njVRnx2FFrT-gawBWK2KzSTRoCc1Y?usp=sharing) |
+| User feedback spreadsheet | [Google Sheets feedback responses](https://docs.google.com/spreadsheets/d/1J1tNAu-vLAwhJbt3wukgkPtV2goqnBleN8nLz8gERIk/edit?usp=sharing) |
 | Frontend provider registration transaction | `TODO: add tx hash after publishing one tool from Provider Console` |
 
 ---
