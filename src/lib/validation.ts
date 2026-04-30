@@ -27,6 +27,18 @@ export const registerToolSchema = z.object({
 
 export type RegisterToolInput = z.infer<typeof registerToolSchema>;
 
+export const onchainProofSchema = z.object({
+  providerWallet: z.string().trim().refine(isValidStellarPublicKey, {
+    message: "Provider wallet must be a valid Stellar public key."
+  }),
+  metadataHash: z.string().regex(/^[a-f0-9]{64}$/i, "Metadata hash must be a SHA-256 hex string."),
+  contractId: z.string().trim().regex(/^C[A-Z2-7]{55}$/, "Contract id must be a Stellar contract id."),
+  txHash: z.string().trim().regex(/^[a-f0-9]{64}$/i, "Transaction hash must be a 64-character hex string."),
+  ledger: z.coerce.number().int().positive().optional()
+});
+
+export type OnchainProofInput = z.infer<typeof onchainProofSchema>;
+
 export function isValidStellarPublicKey(value: string) {
   try {
     return StrKey.isValidEd25519PublicKey(value);

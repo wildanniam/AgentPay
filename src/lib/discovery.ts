@@ -25,6 +25,19 @@ export function toPublicTool(tool: ToolWithProvider, baseUrl = env.NEXT_PUBLIC_A
     absoluteCallUrl,
     inputExample: parseJsonField(tool.inputExampleJson, {}),
     outputExample: parseJsonField(tool.outputExampleJson, {}),
+    metadataHash: tool.metadataHash,
+    onchain:
+      tool.onchainStatus === "registered"
+        ? {
+            status: tool.onchainStatus,
+            contractId: tool.onchainContractId,
+            txHash: tool.onchainTxHash,
+            ledger: tool.onchainLedger,
+            registeredAt: tool.onchainRegisteredAt?.toISOString() ?? null
+          }
+        : {
+            status: tool.onchainStatus
+          },
     payment: {
       protocol: "x402",
       scheme: "exact",
