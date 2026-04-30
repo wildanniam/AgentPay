@@ -8,6 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "vitest run",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:push:direct": "node scripts/with-direct-url.mjs prisma db push",
@@ -20,6 +21,7 @@
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
+    "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "latest",
     "@x402/core": "latest",
     "@x402/fetch": "latest",
@@ -47,6 +49,7 @@
     "prisma": "6.19.3",
     "tailwindcss": "3.4.17",
     "tsx": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "vitest": "^4.1.5"
   }
 }
