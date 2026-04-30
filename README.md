@@ -1,19 +1,36 @@
-# AgentPay
-
-**An x402-powered API marketplace where external AI agents discover tools, pay per request with Stellar testnet USDC, and receive provider responses only after settlement.**
-
-AgentPay turns ordinary HTTP APIs into paid, agent-readable tools. Providers register an endpoint and price. External agents fetch the marketplace registry, call a paid wrapper endpoint, complete the x402 payment flow, and get the API response after the payment is settled.
-
-🌐 **Live Demo:** [https://agent-pay-jet.vercel.app](https://agent-pay-jet.vercel.app)
-
-![CI](https://github.com/wildanniam/AgentPay/actions/workflows/ci.yml/badge.svg)
-![Next.js](https://img.shields.io/badge/Next.js-App%20Router-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
-![Stellar](https://img.shields.io/badge/Stellar-Testnet-7D5CFF)
-![x402](https://img.shields.io/badge/x402-Payments-f6b73c)
-![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E)
-![Soroban](https://img.shields.io/badge/Soroban-Registry%20Proof-111111)
-![Status](https://img.shields.io/badge/status-Level%203%2B4%20Ready-green)
+<div align="center">
+  <h1>AgentPay</h1>
+  <p>
+    <strong>
+      An x402-powered API marketplace where external AI agents discover paid tools,
+      settle requests with Stellar testnet USDC, and receive provider responses only after payment.
+    </strong>
+  </p>
+  <p>
+    AgentPay turns ordinary HTTP APIs into agent-readable paid tools.
+    Providers publish endpoints and prices; external agents discover the registry,
+    call an x402 wrapper, pay per request, and get the API response after settlement.
+  </p>
+  <p>
+    <a href="https://agent-pay-jet.vercel.app"><strong>Live Demo</strong></a>
+    ·
+    <a href="https://agent-pay-jet.vercel.app/marketplace">Marketplace</a>
+    ·
+    <a href="https://agent-pay-jet.vercel.app/.well-known/agentpay-tools.json">Agent Discovery JSON</a>
+    ·
+    <a href="https://stellar.expert/explorer/testnet/contract/CCRBSDJQ22T3RARVHUZLDYVP65DNN6HF7LVIQ7ZKMOFCK4RD7UIXTXBL">Registry Contract</a>
+  </p>
+  <p>
+    <img alt="AgentPay CI" src="https://github.com/wildanniam/AgentPay/actions/workflows/ci.yml/badge.svg" />
+    <img alt="Next.js App Router" src="https://img.shields.io/badge/Next.js-App%20Router-black" />
+    <img alt="TypeScript Ready" src="https://img.shields.io/badge/TypeScript-Ready-blue" />
+    <img alt="Stellar Testnet" src="https://img.shields.io/badge/Stellar-Testnet-7D5CFF" />
+    <img alt="x402 Payments" src="https://img.shields.io/badge/x402-Payments-f6b73c" />
+    <img alt="Supabase Postgres" src="https://img.shields.io/badge/Supabase-Postgres-3ECF8E" />
+    <img alt="Soroban Registry Proof" src="https://img.shields.io/badge/Soroban-Registry%20Proof-111111" />
+    <img alt="Level 3+4 Track" src="https://img.shields.io/badge/status-Level%203%2B4%20Track-green" />
+  </p>
+</div>
 
 ---
 
@@ -92,6 +109,7 @@ npm run demo:agent -- "Explain x402 on Stellar"
 ```
 
 5. Open `/logs` to verify that the paid call produced a payment and usage receipt.
+6. Open `/provider` to connect Freighter, verify wallet readiness, and publish a provider tool with an on-chain registry proof.
 
 ---
 
@@ -350,31 +368,43 @@ Build the contract:
 stellar contract build --manifest-path Cargo.toml --package agentpay_registry
 ```
 
+Create and fund a deployer identity on Stellar Testnet:
+
+```bash
+stellar keys generate agentpay-deployer --network testnet
+
+stellar keys fund agentpay-deployer \
+  --network testnet \
+  --rpc-url https://soroban-testnet.stellar.org \
+  --network-passphrase "Test SDF Network ; September 2015"
+```
+
 Deploy to Stellar Testnet:
 
 ```bash
-stellar keys generate agentpay-deployer --network testnet --fund
-
 stellar contract deploy \
   --wasm target/wasm32v1-none/release/agentpay_registry.wasm \
   --source-account agentpay-deployer \
   --network testnet \
+  --rpc-url https://soroban-testnet.stellar.org \
+  --network-passphrase "Test SDF Network ; September 2015" \
   --alias agentpay_registry
 ```
 
-After deployment, set:
+The current deployed registry contract is:
 
 ```bash
-NEXT_PUBLIC_AGENTPAY_REGISTRY_CONTRACT_ID="C..."
+NEXT_PUBLIC_AGENTPAY_REGISTRY_CONTRACT_ID="CCRBSDJQ22T3RARVHUZLDYVP65DNN6HF7LVIQ7ZKMOFCK4RD7UIXTXBL"
 ```
 
 Current contract evidence:
 
 | Item | Value |
 | --- | --- |
-| Contract address | `TODO: deploy AgentPayRegistry and paste contract id` |
-| Deployment transaction hash | `TODO: paste deployment tx hash` |
-| Latest registry transaction hash | `TODO: paste provider registration tx hash` |
+| Contract address | [`CCRBSDJQ22T3RARVHUZLDYVP65DNN6HF7LVIQ7ZKMOFCK4RD7UIXTXBL`](https://stellar.expert/explorer/testnet/contract/CCRBSDJQ22T3RARVHUZLDYVP65DNN6HF7LVIQ7ZKMOFCK4RD7UIXTXBL) |
+| WASM upload transaction | [`ba77719b5b707941a7804cb8aa2a1d5bca597478ceddeb1edec6596835a91f2d`](https://stellar.expert/explorer/testnet/tx/ba77719b5b707941a7804cb8aa2a1d5bca597478ceddeb1edec6596835a91f2d) |
+| Contract deployment transaction | [`ad32ce2bad1129a6174a41e85f50e5cb9a1194794e7bd67ecd674e12a446454c`](https://stellar.expert/explorer/testnet/tx/ad32ce2bad1129a6174a41e85f50e5cb9a1194794e7bd67ecd674e12a446454c) |
+| Latest provider registration transaction | `Pending final Provider Console registration test` |
 
 ---
 
@@ -553,11 +583,13 @@ Required evidence for the Stellar Level 3+4 submission:
 | --- | --- |
 | Live demo | [https://agent-pay-jet.vercel.app](https://agent-pay-jet.vercel.app) |
 | CI pipeline | [GitHub Actions](https://github.com/wildanniam/AgentPay/actions/workflows/ci.yml) |
+| AgentPayRegistry contract | [`CCRBSDJQ22T3RARVHUZLDYVP65DNN6HF7LVIQ7ZKMOFCK4RD7UIXTXBL`](https://stellar.expert/explorer/testnet/contract/CCRBSDJQ22T3RARVHUZLDYVP65DNN6HF7LVIQ7ZKMOFCK4RD7UIXTXBL) |
+| Contract deploy transaction | [`ad32ce2bad1129a6174a41e85f50e5cb9a1194794e7bd67ecd674e12a446454c`](https://stellar.expert/explorer/testnet/tx/ad32ce2bad1129a6174a41e85f50e5cb9a1194794e7bd67ecd674e12a446454c) |
+| x402 demo payment transaction | [`977fea7f0af5e4fe1da56659b9b0bc96899dc2dd27bbb4f1eb7116fd119b115a`](https://stellar.expert/explorer/testnet/tx/977fea7f0af5e4fe1da56659b9b0bc96899dc2dd27bbb4f1eb7116fd119b115a) |
 | 3+ passing tests screenshot | `TODO: add screenshot after final test run` |
 | Mobile responsive screenshot | `TODO: add mobile screenshot` |
 | 1-minute demo video | `TODO: add demo video link` |
-| Contract address | `TODO: add deployed AgentPayRegistry contract id` |
-| Contract transaction hash | `TODO: add deployment or provider registration tx hash` |
+| Frontend provider registration transaction | `TODO: add tx hash after publishing one tool from Provider Console` |
 
 ---
 
