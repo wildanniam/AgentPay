@@ -6,12 +6,14 @@ AgentPay turns ordinary HTTP APIs into paid, agent-readable tools. Providers reg
 
 🌐 **Live Demo:** [https://agent-pay-jet.vercel.app](https://agent-pay-jet.vercel.app)
 
+![CI](https://github.com/wildanniam/AgentPay/actions/workflows/ci.yml/badge.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-App%20Router-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
 ![Stellar](https://img.shields.io/badge/Stellar-Testnet-7D5CFF)
 ![x402](https://img.shields.io/badge/x402-Payments-f6b73c)
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E)
-![Status](https://img.shields.io/badge/status-MVP-green)
+![Soroban](https://img.shields.io/badge/Soroban-Registry%20Proof-111111)
+![Status](https://img.shields.io/badge/status-Level%203%2B4%20Ready-green)
 
 ---
 
@@ -25,11 +27,13 @@ AgentPay turns ordinary HTTP APIs into paid, agent-readable tools. Providers reg
 - [Features](#features)
 - [API Surface](#api-surface)
 - [External Agent Demo](#external-agent-demo)
-- [Smart Contract Note](#smart-contract-note)
+- [Freighter Provider Wallet Flow](#freighter-provider-wallet-flow)
+- [On-chain Registry Proof](#on-chain-registry-proof)
 - [Local Development](#local-development)
 - [Environment Variables](#environment-variables)
 - [Deployment](#deployment)
 - [Verification Checklist](#verification-checklist)
+- [Submission Evidence](#submission-evidence)
 - [Project Structure](#project-structure)
 - [MVP Boundaries](#mvp-boundaries)
 - [Roadmap](#roadmap)
@@ -144,10 +148,15 @@ flowchart LR
 
 ### Provider Side
 
+- Connect and disconnect a Freighter wallet.
+- Detect Stellar Testnet and display XLM balance.
+- Check whether the provider wallet has a USDC trustline.
+- Send a tiny XLM readiness ping on testnet.
 - Register an API as a paid tool.
 - Set a USDC per-call price.
 - Provide a Stellar testnet wallet that receives payment.
 - Publish input/output examples for agent consumers.
+- Sign an AgentPayRegistry contract call to anchor the tool metadata hash on-chain.
 - Gate public registration with `TOOL_REGISTRATION_TOKEN`.
 
 ### Agent Side
@@ -165,6 +174,7 @@ flowchart LR
 - Browse active tools.
 - Inspect paid call logs.
 - See payer/provider wallets.
+- See on-chain registration proof badges when available.
 - Copy payment proof or transaction hash.
 - Open transaction proof in Stellar explorer.
 
@@ -179,6 +189,7 @@ flowchart LR
 | `POST` | `/api/tools` | Registers a provider API as a paid tool |
 | `GET` | `/.well-known/agentpay-tools.json` | Agent-facing discovery document |
 | `POST` | `/api/tools/{toolId}/call` | x402-protected paid wrapper endpoint |
+| `POST` | `/api/tools/{toolId}/onchain-proof` | Stores AgentPayRegistry transaction proof after a successful contract call |
 | `GET` | `/api/logs` | Returns recent payment and usage logs |
 
 ### Tool Discovery Example
@@ -201,6 +212,13 @@ Example response shape:
       "description": "Explains Stellar, Soroban, x402, wallets, and testnet payment concepts.",
       "callUrl": "/api/tools/tool_id/call",
       "absoluteCallUrl": "https://agent-pay-jet.vercel.app/api/tools/tool_id/call",
+      "metadataHash": "4d9676...",
+      "onchain": {
+        "status": "registered",
+        "contractId": "C...",
+        "txHash": "889f7813...",
+        "ledger": 123456
+      },
       "payment": {
         "protocol": "x402",
         "scheme": "exact",
@@ -280,13 +298,83 @@ OpenAI-based tool selection is optional future work. The MVP works without `OPEN
 
 ---
 
-## Smart Contract Note
+## Freighter Provider Wallet Flow
 
-AgentPay currently does **not** deploy a custom smart contract.
+The Provider Console includes the Stellar requirements without turning AgentPay into a wallet demo.
 
-The payment layer uses the x402 Stellar integration and Stellar testnet USDC settlement. In the current MVP, the on-chain/payment proof comes from the Stellar payment transaction handled through x402, not from a custom AgentPay escrow or registry contract.
+Provider flow:
 
-Future versions could add custom contracts for escrow, revenue splitting, provider staking, refunds, or an on-chain tool registry.
+1. Connect Freighter.
+2. Confirm the wallet is on Stellar Testnet.
+3. Display the connected public key.
+4. Fetch and show the wallet XLM balance.
+5. Check for a USDC trustline.
+6. Send a tiny XLM readiness ping to a configured testnet recipient.
+7. Use the same wallet as the provider payout wallet.
+8. Sign the AgentPayRegistry contract call when publishing a tool.
+
+The XLM transaction is intentionally framed as a readiness ping. The core product remains the paid API marketplace.
+
+## On-chain Registry Proof
+
+AgentPay includes a Soroban smart contract:
+
+```txt
+contracts/agentpay_registry
+```
+
+Contract functions:
+
+- `register_tool(provider, tool_id, metadata_hash)`
+- `get_tool(tool_id)`
+
+The contract stores:
+
+- provider address,
+- canonical metadata hash,
+- registered ledger.
+
+It also requires provider authorization with `provider.require_auth()` and emits a `ToolRegistered` event.
+
+Why this contract exists:
+
+- Supabase stores marketplace data, endpoint URLs, discovery payloads, and logs.
+- AgentPayRegistry anchors a compact proof that a provider wallet registered a specific tool metadata hash.
+- Large mutable API metadata stays off-chain where it belongs.
+
+### Contract Deployment
+
+Build the contract:
+
+```bash
+stellar contract build --manifest-path Cargo.toml --package agentpay_registry
+```
+
+Deploy to Stellar Testnet:
+
+```bash
+stellar keys generate agentpay-deployer --network testnet --fund
+
+stellar contract deploy \
+  --wasm target/wasm32v1-none/release/agentpay_registry.wasm \
+  --source-account agentpay-deployer \
+  --network testnet \
+  --alias agentpay_registry
+```
+
+After deployment, set:
+
+```bash
+NEXT_PUBLIC_AGENTPAY_REGISTRY_CONTRACT_ID="C..."
+```
+
+Current contract evidence:
+
+| Item | Value |
+| --- | --- |
+| Contract address | `TODO: deploy AgentPayRegistry and paste contract id` |
+| Deployment transaction hash | `TODO: paste deployment tx hash` |
+| Latest registry transaction hash | `TODO: paste provider registration tx hash` |
 
 ---
 
@@ -348,6 +436,12 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 STELLAR_NETWORK="stellar:testnet"
 STELLAR_RPC_URL="https://soroban-testnet.stellar.org"
+NEXT_PUBLIC_STELLAR_HORIZON_URL="https://horizon-testnet.stellar.org"
+NEXT_PUBLIC_STELLAR_RPC_URL="https://soroban-testnet.stellar.org"
+NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
+NEXT_PUBLIC_STELLAR_READINESS_RECIPIENT_PUBLIC_KEY="G..."
+NEXT_PUBLIC_STELLAR_READINESS_PING_AMOUNT="0.00001"
+NEXT_PUBLIC_AGENTPAY_REGISTRY_CONTRACT_ID="C..."
 X402_FACILITATOR_URL="https://www.x402.org/facilitator"
 PROVIDER_REQUEST_TIMEOUT_MS="12000"
 
@@ -360,9 +454,10 @@ TOOL_REGISTRATION_TOKEN="long-random-token"
 ```bash
 AGENT_STELLAR_SECRET_KEY="S..."
 DEMO_PROVIDER_STELLAR_PUBLIC_KEY="G..."
+NEXT_PUBLIC_STELLAR_READINESS_RECIPIENT_PUBLIC_KEY="G..."
 ```
 
-Do not commit secret keys. The agent wallet secret belongs to the external consumer runtime, not the marketplace server.
+Do not commit secret keys. The agent wallet secret belongs to the external consumer runtime, not the marketplace server. Public `NEXT_PUBLIC_` values are safe to expose, but still need to point at the correct testnet resources.
 
 ---
 
@@ -378,6 +473,12 @@ DIRECT_URL="postgresql://..."
 NEXT_PUBLIC_APP_URL="https://agent-pay-jet.vercel.app"
 STELLAR_NETWORK="stellar:testnet"
 STELLAR_RPC_URL="https://soroban-testnet.stellar.org"
+NEXT_PUBLIC_STELLAR_HORIZON_URL="https://horizon-testnet.stellar.org"
+NEXT_PUBLIC_STELLAR_RPC_URL="https://soroban-testnet.stellar.org"
+NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
+NEXT_PUBLIC_STELLAR_READINESS_RECIPIENT_PUBLIC_KEY="G..."
+NEXT_PUBLIC_STELLAR_READINESS_PING_AMOUNT="0.00001"
+NEXT_PUBLIC_AGENTPAY_REGISTRY_CONTRACT_ID="C..."
 X402_FACILITATOR_URL="https://www.x402.org/facilitator"
 PROVIDER_REQUEST_TIMEOUT_MS="12000"
 DEMO_PROVIDER_STELLAR_PUBLIC_KEY="G..."
@@ -400,7 +501,10 @@ Full guide: [docs/deployment.md](docs/deployment.md)
 
 ```bash
 npm run lint
+npm test
 npm run build
+cargo test --manifest-path contracts/agentpay_registry/Cargo.toml
+stellar contract build --manifest-path Cargo.toml --package agentpay_registry
 ```
 
 Check the deployed app:
@@ -430,6 +534,31 @@ After a successful paid call, open:
 https://agent-pay-jet.vercel.app/logs
 ```
 
+Manual Stellar checks:
+
+- Connect Freighter on Testnet in `/provider`.
+- Confirm the XLM balance appears.
+- Send the readiness ping and copy the transaction hash.
+- Publish a provider tool.
+- Sign the AgentPayRegistry transaction.
+- Confirm the marketplace shows `on-chain registered`.
+
+---
+
+## Submission Evidence
+
+Required evidence for the Stellar Level 3+4 submission:
+
+| Evidence | Link / Screenshot |
+| --- | --- |
+| Live demo | [https://agent-pay-jet.vercel.app](https://agent-pay-jet.vercel.app) |
+| CI pipeline | [GitHub Actions](https://github.com/wildanniam/AgentPay/actions/workflows/ci.yml) |
+| 3+ passing tests screenshot | `TODO: add screenshot after final test run` |
+| Mobile responsive screenshot | `TODO: add mobile screenshot` |
+| 1-minute demo video | `TODO: add demo video link` |
+| Contract address | `TODO: add deployed AgentPayRegistry contract id` |
+| Contract transaction hash | `TODO: add deployment or provider registration tx hash` |
+
 ---
 
 ## Project Structure
@@ -448,6 +577,7 @@ src/app/
 src/components/
   landing/
   marketplace/
+  provider-wallet-readiness.tsx
   provider-tool-form.tsx
 
 src/lib/
@@ -455,9 +585,14 @@ src/lib/
   env.ts
   provider-forwarding.ts
   registration.ts
+  stellar-browser.ts
+  tool-metadata.ts
   tools.ts
   validation.ts
   x402-server.ts
+
+contracts/
+  agentpay_registry/
 
 examples/
   agent-consumer/
@@ -465,6 +600,11 @@ examples/
 prisma/
   schema.prisma
   seed.ts
+
+tests/
+  discovery.test.ts
+  tool-metadata.test.ts
+  validation.test.ts
 ```
 
 ---
@@ -473,7 +613,7 @@ prisma/
 
 - Payments use Stellar testnet USDC, not mainnet funds.
 - The marketplace uses Supabase Postgres as the off-chain registry.
-- The current version has no custom smart contract.
+- AgentPayRegistry stores compact registration proof, not full marketplace data.
 - Demo tool selection uses a keyword router.
 - Provider registration can be protected with `TOOL_REGISTRATION_TOKEN`.
 - Provider endpoints must use HTTPS in production.
@@ -490,7 +630,7 @@ prisma/
 - Optional OpenAI-powered tool selector
 - Agent SDKs
 - Webhooks for provider payment events
-- Custom smart contracts for escrow or revenue splitting
+- Escrow, refunds, revenue splitting, or provider staking contracts
 
 ---
 
@@ -498,5 +638,8 @@ prisma/
 
 - [x402 documentation](https://docs.x402.org/)
 - [Stellar x402 quickstart](https://developers.stellar.org/docs/build/agentic-payments/x402/quickstart-guide)
+- [Freighter web app API](https://docs.freighter.app/docs/guide/usingfreighterwebapp/)
+- [Prompt Freighter to sign transactions](https://developers.stellar.org/docs/build/guides/freighter/prompt-to-sign-tx)
+- [Deploy Stellar smart contracts to testnet](https://developers.stellar.org/docs/build/smart-contracts/getting-started/deploy-to-testnet)
 - [Supabase Prisma guide](https://supabase.com/docs/guides/database/prisma)
 - [Vercel environment variables](https://vercel.com/docs/environment-variables)
