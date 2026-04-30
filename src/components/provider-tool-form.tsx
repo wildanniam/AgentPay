@@ -11,9 +11,13 @@ import {
   ReceiptText,
   Server,
   ShieldCheck,
-  Wallet
+  Wallet,
+  Workflow
 } from "lucide-react";
+import { ProviderWalletReadiness } from "@/components/provider-wallet-readiness";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { registerToolOnchain } from "@/lib/stellar-browser";
+import { shortAddress } from "@/lib/text";
 import { toolCategories } from "@/lib/validation";
 
 const defaultInputExample = JSON.stringify({ text: "Long abstract here..." }, null, 2);
@@ -39,6 +43,15 @@ type FormState = {
   outputExampleJson: string;
 };
 
+type RegisteredToolResponse = {
+  id: string;
+  name: string;
+  provider: {
+    walletAddress: string;
+  };
+  metadataHash?: string | null;
+};
+
 const initialState: FormState = {
   registrationToken: "",
   providerName: "",
@@ -58,30 +71,41 @@ export function ProviderToolForm({
   registrationProtected: boolean;
 }) {
   const [form, setForm] = useState<FormState>(initialState);
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [connectedWallet, setConnectedWallet] = useState("");
+  const [status, setStatus] = useState<
+    "idle" | "submitting" | "contract" | "proof" | "success" | "error"
+  >("idle");
   const [message, setMessage] = useState("");
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
+  const updateConnectedWallet = (wallet: string) => {
+    setConnectedWallet(wallet);
+    update("providerWallet", wallet);
+  };
+
+  const registrationHeaders = () => ({
+    "Content-Type": "application/json",
+    ...(registrationProtected && form.registrationToken
+      ? { "x-agentpay-registration-token": form.registrationToken }
+      : {})
+  });
+
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus("submitting");
-    setMessage("");
+    setMessage("Saving the API tool in the AgentPay marketplace...");
 
     try {
       const inputExampleJson = JSON.parse(form.inputExampleJson);
       const outputExampleJson = JSON.parse(form.outputExampleJson);
+      const registryContractId = process.env.NEXT_PUBLIC_AGENTPAY_REGISTRY_CONTRACT_ID;
 
       const response = await fetch("/api/tools", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(registrationProtected && form.registrationToken
-            ? { "x-agentpay-registration-token": form.registrationToken }
-            : {})
-        },
+        headers: registrationHeaders(),
         body: JSON.stringify({
           ...form,
           registrationToken: undefined,
@@ -99,12 +123,69 @@ export function ProviderToolForm({
         throw new Error(issue ? `${issue.path}: ${issue.message}` : body.error);
       }
 
+      const tool = body.tool as RegisteredToolResponse;
+      let proofHash = "";
+      let proofSkipMessage = "On-chain proof was not attempted.";
+
+      if (registryContractId && connectedWallet && tool.metadataHash) {
+        if (connectedWallet !== form.providerWallet) {
+          throw new Error("Connected Freighter wallet must match the provider payout wallet.");
+        }
+
+        setStatus("contract");
+        setMessage("Requesting Freighter signature for the AgentPayRegistry contract...");
+        toast.message("On-chain registration proof", {
+          description: "Freighter will ask you to sign the tool registration transaction."
+        });
+
+        const proof = await registerToolOnchain({
+          source: connectedWallet,
+          contractId: registryContractId,
+          toolId: tool.id,
+          metadataHash: tool.metadataHash
+        });
+
+        proofHash = proof.hash;
+        setStatus("proof");
+        setMessage("Contract transaction confirmed. Recording proof in AgentPay...");
+
+        const proofResponse = await fetch(`/api/tools/${tool.id}/onchain-proof`, {
+          method: "POST",
+          headers: registrationHeaders(),
+          body: JSON.stringify({
+            providerWallet: connectedWallet,
+            metadataHash: tool.metadataHash,
+            contractId: registryContractId,
+            txHash: proof.hash,
+            ledger: proof.ledger
+          })
+        });
+        const proofBody = await proofResponse.json();
+
+        if (!proofResponse.ok) {
+          const issue = proofBody.issues?.[0];
+          throw new Error(issue ? `${issue.path}: ${issue.message}` : proofBody.error);
+        }
+      } else if (!registryContractId) {
+        proofSkipMessage = "Set NEXT_PUBLIC_AGENTPAY_REGISTRY_CONTRACT_ID to anchor the next tool on-chain.";
+      } else if (!connectedWallet) {
+        proofSkipMessage = "Connect Freighter before publishing to anchor the next tool on-chain.";
+      } else if (!tool.metadataHash) {
+        proofSkipMessage = "Metadata hash was missing from the registration response.";
+      }
+
       setStatus("success");
-      setMessage(`Registered ${body.tool.name}`);
-      toast.success("Tool published", {
-        description: `${body.tool.name} is now discoverable from the AgentPay marketplace.`
+      setMessage(
+        proofHash
+          ? `Registered ${tool.name} with on-chain proof ${shortAddress(proofHash)}.`
+          : `Registered ${tool.name}. ${proofSkipMessage}`
+      );
+      toast.success(proofHash ? "Tool published with on-chain proof" : "Tool published", {
+        description: proofHash
+          ? `${tool.name} is discoverable and anchored to AgentPayRegistry.`
+          : `${tool.name} is now discoverable from the AgentPay marketplace.`
       });
-      setForm(initialState);
+      setForm({ ...initialState, providerWallet: connectedWallet });
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Registration failed.");
@@ -113,6 +194,8 @@ export function ProviderToolForm({
 
   return (
     <form onSubmit={submit} className="grid gap-5">
+      <ProviderWalletReadiness value={connectedWallet} onWalletChange={updateConnectedWallet} />
+
       {registrationProtected ? (
         <div className="form-section">
           <SectionHeader
@@ -139,7 +222,7 @@ export function ProviderToolForm({
           icon={<Wallet className="size-4" />}
           eyebrow="Provider"
           title="Who receives the payment?"
-          note="Only the public wallet address is needed. The provider wallet must have a USDC trustline on Stellar testnet."
+          note="The connected Freighter wallet is used as the payout wallet and the signer for the on-chain registration proof."
         />
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Provider name">
@@ -156,6 +239,7 @@ export function ProviderToolForm({
               onChange={(event) => update("providerWallet", event.target.value)}
               className="input font-mono"
               placeholder="G..."
+              readOnly={Boolean(connectedWallet)}
               required
             />
           </Field>
@@ -163,7 +247,9 @@ export function ProviderToolForm({
         <div className="mt-4 flex flex-wrap gap-2">
           <StatusBadge tone="network">stellar:testnet</StatusBadge>
           <StatusBadge tone="success">USDC trustline required</StatusBadge>
-          <StatusBadge tone="payment">public key only</StatusBadge>
+          <StatusBadge tone="payment">
+            {connectedWallet ? "Freighter connected" : "public key fallback"}
+          </StatusBadge>
         </div>
       </div>
 
@@ -289,16 +375,26 @@ export function ProviderToolForm({
           </div>
         ) : (
           <span className="text-sm text-paper/70">
-            POST tools only. Network defaults to Stellar testnet.
+            Publish saves the tool, then signs an on-chain registry proof when configured.
           </span>
         )}
         <button
           type="submit"
-          disabled={status === "submitting"}
+          disabled={status === "submitting" || status === "contract" || status === "proof"}
           className="inline-flex items-center justify-center gap-2 border border-paper bg-paper px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-mint disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <Plus className="size-4" />
-          {status === "submitting" ? "Registering" : "Register Tool"}
+          {status === "contract" || status === "proof" ? (
+            <Workflow className="size-4" />
+          ) : (
+            <Plus className="size-4" />
+          )}
+          {status === "submitting"
+            ? "Registering"
+            : status === "contract"
+              ? "Signing proof"
+              : status === "proof"
+                ? "Recording proof"
+                : "Register Tool"}
         </button>
       </div>
     </form>
