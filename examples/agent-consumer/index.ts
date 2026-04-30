@@ -158,7 +158,9 @@ function scoreTool(prompt: string, tool: DiscoveredTool) {
   const keywordSets: Record<string, string[]> = {
     research: ["paper", "abstract", "summarize", "summary", "research", "journal"],
     campus: ["campus", "kuliah", "sidang", "skripsi", "ta", "krs"],
-    stellar: ["stellar", "soroban", "wallet", "testnet", "x402", "usdc"]
+    stellar: ["stellar", "soroban", "wallet", "testnet", "x402", "usdc"],
+    data: ["json", "validate", "format", "schema", "payload", "parse"],
+    utility: ["pitch", "startup", "critic", "meeting", "action", "transcript", "todo"]
   };
 
   for (const [category, keywords] of Object.entries(keywordSets)) {
@@ -187,6 +189,14 @@ function normalizePayload(prompt: string, tool: DiscoveredTool) {
 
   if (tool.category === "stellar") {
     return { question: prompt };
+  }
+
+  if (tool.category === "data") {
+    return { input: prompt };
+  }
+
+  if (tool.category === "utility") {
+    return { input: prompt };
   }
 
   return { input: prompt };

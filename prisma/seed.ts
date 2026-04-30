@@ -80,6 +80,65 @@ async function main() {
         difficulty: "beginner",
         nextStep: "Create and fund a testnet wallet with USDC."
       }
+    },
+    {
+      slug: "pitch-critic",
+      name: "Startup Pitch Critic",
+      description: "Reviews startup pitches and returns strengths, risks, and a sharper one-line rewrite.",
+      category: "utility",
+      endpointUrl: `${appUrl()}/api/provider-seed/pitch-critic`,
+      priceAmount: "0.01",
+      inputExampleJson: {
+        pitch:
+          "AgentPay is an API marketplace where external agents discover paid tools and pay with Stellar testnet USDC."
+      },
+      outputExampleJson: {
+        verdict: "promising",
+        score: 82,
+        strengths: ["Names a concrete audience or workflow."],
+        risks: ["The pitch should show why this product is urgent now."],
+        suggestedIteration:
+          "Rewrite the pitch as: user segment, painful workflow, paid action, proof point, and next milestone."
+      }
+    },
+    {
+      slug: "json-inspector",
+      name: "JSON Inspector",
+      description: "Validates and normalizes JSON payloads before agents send structured requests.",
+      category: "data",
+      endpointUrl: `${appUrl()}/api/provider-seed/json-inspector`,
+      priceAmount: "0.01",
+      inputExampleJson: { json: "{\"tool\":\"agentpay\",\"paid\":true}" },
+      outputExampleJson: {
+        valid: true,
+        type: "object",
+        keys: ["tool", "paid"],
+        normalizedJson: "{\n  \"tool\": \"agentpay\",\n  \"paid\": true\n}"
+      }
+    },
+    {
+      slug: "meeting-actions",
+      name: "Meeting Action Extractor",
+      description: "Turns meeting transcripts into action items, decisions, and follow-up reminders.",
+      category: "utility",
+      endpointUrl: `${appUrl()}/api/provider-seed/meeting-actions`,
+      priceAmount: "0.01",
+      inputExampleJson: {
+        transcript:
+          "Wildan will deploy the app today. The team agreed to record a demo video. We should update the README."
+      },
+      outputExampleJson: {
+        summary: "Wildan will deploy the app today.",
+        actionItems: [
+          {
+            id: 1,
+            owner: "Wildan",
+            task: "Wildan will deploy the app today.",
+            priority: "high"
+          }
+        ],
+        decisions: ["The team agreed to record a demo video."]
+      }
     }
   ];
 
