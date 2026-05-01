@@ -43,6 +43,7 @@
 - [What Is AgentPay?](#what-is-agentpay)
 - [Why This Matters](#why-this-matters)
 - [Live Review Path](#live-review-path)
+- [Screenshots](#screenshots)
 - [Core Flow](#core-flow)
 - [Architecture](#architecture)
 - [Features](#features)
@@ -114,6 +115,18 @@ npm run demo:agent -- "Explain x402 on Stellar"
 
 5. Open `/logs` to verify that the paid call produced a payment and usage receipt.
 6. Open `/provider` to connect Freighter, verify wallet readiness, and publish a provider tool with an on-chain registry proof.
+
+---
+
+## Screenshots
+
+### Website Preview
+
+![AgentPay desktop website preview](docs/assets/agentpay-desktop.png)
+
+### Mobile Responsive Preview
+
+![AgentPay mobile responsive preview](docs/assets/agentpay-mobile.png)
 
 ---
 
@@ -591,7 +604,8 @@ Required evidence for the Stellar Level 3+4 submission:
 | Contract deploy transaction | [`ad32ce2bad1129a6174a41e85f50e5cb9a1194794e7bd67ecd674e12a446454c`](https://stellar.expert/explorer/testnet/tx/ad32ce2bad1129a6174a41e85f50e5cb9a1194794e7bd67ecd674e12a446454c) |
 | x402 demo payment transaction | [`977fea7f0af5e4fe1da56659b9b0bc96899dc2dd27bbb4f1eb7116fd119b115a`](https://stellar.expert/explorer/testnet/tx/977fea7f0af5e4fe1da56659b9b0bc96899dc2dd27bbb4f1eb7116fd119b115a) |
 | 3+ passing tests screenshot | `TODO: add screenshot after final test run` |
-| Mobile responsive screenshot | `TODO: add mobile screenshot` |
+| Website screenshot | [Desktop preview](docs/assets/agentpay-desktop.png) |
+| Mobile responsive screenshot | [Mobile preview](docs/assets/agentpay-mobile.png) |
 | 1-minute demo video | [Google Drive demo folder](https://drive.google.com/drive/folders/17F3njVRnx2FFrT-gawBWK2KzSTRoCc1Y?usp=sharing) |
 | User feedback spreadsheet | [Google Sheets feedback responses](https://docs.google.com/spreadsheets/d/1J1tNAu-vLAwhJbt3wukgkPtV2goqnBleN8nLz8gERIk/edit?usp=sharing) |
 | Frontend provider registration transaction | `TODO: add tx hash after publishing one tool from Provider Console` |
